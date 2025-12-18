@@ -209,7 +209,7 @@ def get_input():
                     if len(coordinates) > 2 and coordinates[2] in "open flag":
                         action = coordinates[2]
                     else:
-                            os.system("cls")
+                            clear_screen()
                             print_info()
                             display_board(highlight_x=x, highlight_y=y)
 
@@ -299,6 +299,15 @@ def check_win():
                 return False
     return True
 
+def clear_screen():
+    """
+    Crossplatform cls
+    """
+
+    if os.name == "nt":
+        os.system("cls")
+    else:
+        os.system("clear")
 
 # Run the app
 if __name__ == '__main__':
@@ -308,7 +317,7 @@ if __name__ == '__main__':
     # Main loop
     while True:
         # clear the screen
-        os.system("cls")
+        clear_screen()
 
         # Display the board and the info
         print_info()
@@ -319,14 +328,14 @@ if __name__ == '__main__':
 
         # Stop the game if a mine has been opened and reveal the board
         if game_over:
-            os.system("cls")
+            clear_screen()
             display_board(True)
             print("Whoops that was a mine. Game over, thx for playing")
             break
 
         # Check if the user flagged all the mines and reveal the board
         if check_win():
-            os.system("cls")
+            clear_screen()
             display_board(True)
 
             # Calculate total time
