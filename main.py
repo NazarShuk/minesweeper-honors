@@ -54,17 +54,20 @@ def generate_board():
         current_column = []
         for column in range(BOARD_SIZE):
             if random.randint(1, 20) <= DIFFICULTY:
+                # add a mine
                 current_column.append({
                     "has":"mine",
                     "revealed": False,
                     "flagged": False
                 })
             else:
+                # add a clear cell
                 current_column.append({
                     "has":"nothing",
                     "revealed": False,
                     "flagged": False
                 })
+        # add the column to the board
         board.append(current_column)
 
 def get_color_by_number(num):
@@ -111,6 +114,7 @@ def get_mines_around(column_idx, row_idx):
     column = row[column_idx]
     mines_around = 0
 
+    # check the top row
     if row_idx != 0:
         # top left
         if column_idx != 0:
@@ -136,6 +140,7 @@ def get_mines_around(column_idx, row_idx):
         if board[row_idx][column_idx + 1]["has"] == "mine":
             mines_around += 1
     
+    # check the bottom row
     if row_idx != len(board) - 1:
         # bottom left
         if column_idx != 0:
@@ -162,28 +167,45 @@ def display_board(reveal = False, highlight_x=-1,highlight_y=-1):
         highlight_y - optional int, only works if highlight_x is also set. Highlights the cell at the given coordinate.
     """
 
+    # print the numbers in the top
     print(" ", end=" ")
     for i in range(BOARD_SIZE):
         print(i + 1, end=get_space())
     print("\n", end="")
+
     for row_idx in range(len(board)):
         row = board[row_idx]
+        
+        # print the numbers on the sides
         print(row_idx + 1, end=" ")
+
+
         for column_idx in range(len(row)):
             column = row[column_idx]
+
+            # Non mine cells
             if column["revealed"] == True or (reveal == True and not column["has"] == "mine"):
                 mines_around = get_mines_around(column_idx, row_idx)
+
+                # Show the mines around if there are any
                 if mines_around > 0:
                   print(get_color_by_number(mines_around) + str(mines_around) + "\033[0m", end=get_space())
                 else:
                     print("\033[90m.\033[0m", end=get_space())
+
+            # Mark the mines with an X when the whole board is revealed
             elif column["has"] == "mine" and reveal:
                 print("X", end=get_space())
+            
+            # Show flagged mines with an F
             elif column["flagged"]:
+                # Highlight
                 if highlight_x == column_idx and highlight_y == row_idx:
                     print("\033[91;40;6mF\033[0m", end=get_space())
                 else:
                     print("\033[90mF\033[0m", end=get_space())
+            
+            # Show unopened cells
             else:
                 if highlight_x == column_idx and highlight_y == row_idx:
                     print("\033[91;40;6m■\033[0m", end=get_space())
@@ -198,6 +220,7 @@ def get_input():
     while True:
       coordinates = input("Enter the coordinates for the next move separated by a space (eg: 6 7): ").strip()
       
+      # Get the coordinates
       if len(coordinates.split(" ")) >= 2:
           coordinates = coordinates.split(" ")
           if coordinates[0].isdigit() and coordinates[1].isdigit():
@@ -206,30 +229,35 @@ def get_input():
 
               while True:
                     action = ""
+                    # If user put an action after the coordinates, skip the second input
                     if len(coordinates) > 2 and coordinates[2] in "open flag":
                         action = coordinates[2]
                     else:
-                            clear_screen()
-                            print_info()
-                            display_board(highlight_x=x, highlight_y=y)
+                        # Ask the user for the action
+                        clear_screen()
+                        print_info()
+                        display_board(highlight_x=x, highlight_y=y)
+                        action = input("What do you want to do? (open, flag, cancel): ").lower().strip()
 
-                            action = input("What do you want to do? (open, flag, cancel): ").lower().strip()
 
                     if action == "open":
-                        
+                        # If the cell has the mine, end the game
                         if board[y][x]["has"] == "mine":
                             global game_over
                             game_over = True
                             break
                         else:
+                            # If cell is empty reveal it
                             flood_open(x, y)
                             board[y][x]["revealed"] = True
                             board[y][x]["flagged"] = False
                             break
+                    # Flag the cell or unflag if it's flagged
                     elif action == "flag":
                         if board[y][x]["revealed"] != True:
                             board[y][x]["flagged"] = not board[y][x]["flagged"]
                         break
+                    # Cancel
                     elif action == "cancel":
                         global moves
                         moves -= 1
