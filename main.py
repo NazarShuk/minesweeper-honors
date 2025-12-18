@@ -1,23 +1,55 @@
+"""
+Nazar Shukhardin
+12/18
+
+This is a simple recreation of the game Minesweeper. The board is displayed in the terminal, and you pick the coordinates in the terminal.
+To display colors, ANSI codes are used.
+
+One thing that surprised me while making this is how powerful ANSI codes are. Not only can you change the colors of the text, but you can also use effects, like blink.
+Some challenges I faced were indexing the board array when checking for mines around the cell, for example, but after some debugging, I solved it.
+I coded this on my own, with a bit of Google help for ANSI codes.
+I feel proud of my project; I didn't use any AI, which is kind of rare today.
+If I had more time to work on this project, I would probably add a better way for input, because entering coordinates manually kind of sucks.
+"""
+
+# imports
 import random
 import os
 import time
 
+# game parameters, constant
 BOARD_SIZE = 8
 DIFFICULTY = 1
 
+# Array of arrays representing each cell on the board
 board = []
+
+# If set to true, when the player finishes their move game ends
 game_over = False
+
+# Total move count, increments after player finishes their move
 moves = 0
+
+# Start time to record total time
 start_time = time.perf_counter()
 
 
 def get_space():
+    """
+    Returns a string of spaces based on the board size. Used to equally separate the cells when displaying the board.
+
+    returns:
+        space - string of spaces
+    """
     space = ""
     for i in range(BOARD_SIZE // 2):
         space += " "
     return space
 
 def generate_board():
+    """
+    Fill the board with cells. SHOULD ONLY BE USED ONCE, OR IF THE BOARD IS EMPTY.
+    """
     for row in range(BOARD_SIZE):
         current_column = []
         for column in range(BOARD_SIZE):
@@ -36,6 +68,15 @@ def generate_board():
         board.append(current_column)
 
 def get_color_by_number(num):
+    """
+    Returns an ANSI color code based on the given number of mines. Colors are taken from the Windows XP Minesweeper.
+
+    args:
+        num - integer, number of mines around a cell
+    
+    returns:
+        ANSI color based on the mines
+    """
     if num == 1:
         return "\033[94m"
     elif num == 2:
@@ -56,6 +97,16 @@ def get_color_by_number(num):
         return "\033[95m"
 
 def get_mines_around(column_idx, row_idx):
+    """
+    Get the number of mines around a cell
+
+    args:
+        column_idx - int, Y coordinate of the cell
+        row_idx - int, X coordinate of the cell
+    
+    returns:
+        mines_around - Amount of mines around the cell
+    """
     row = board[row_idx]
     column = row[column_idx]
     mines_around = 0
@@ -102,6 +153,15 @@ def get_mines_around(column_idx, row_idx):
     return mines_around
 
 def display_board(reveal = False, highlight_x=-1,highlight_y=-1):
+    """
+    Shows the board on the screen. Every cell can be revealed. One cell can be highlighted
+
+    args:
+        reveal - optional bool, if True, every non-mine cell will show the number of mines around it, and all mines will be shown
+        highlight_x - optional int, only works if highlight_y is also set. Highlights the cell at the given coordinate.
+        highlight_y - optional int, only works if highlight_x is also set. Highlights the cell at the given coordinate.
+    """
+
     print(" ", end=" ")
     for i in range(BOARD_SIZE):
         print(i + 1, end=get_space())
@@ -132,6 +192,9 @@ def display_board(reveal = False, highlight_x=-1,highlight_y=-1):
         print("\n")
 
 def get_input():
+    """
+    Let the user pick a coordinate and open or flag a cell. If the user opens a mine, game_over is set to true.
+    """
     while True:
       coordinates = input("Enter the coordinates for the next move separated by a space (eg: 6 7): ").strip()
       
@@ -180,6 +243,9 @@ def get_input():
           print("invalid input")
 
 def print_info():
+    """
+    Shows how many mines are left, how many moves the user did, and how much time has passed.
+    """
     mines_left = 0
     for row in board:
         for column in row:
@@ -193,6 +259,13 @@ def print_info():
     print(f"{mines_left} Mines left || {moves} Moves || {elapsed:.0f} seconds")
 
 def flood_open(x, y):
+    """
+    A recursive function to open all empty cells around a cell.
+
+    args:
+        x - int, the x coordinate of the cell
+        y - int, the y coordinate of the cell
+    """
     if x == -1 or x >= len(board) or y == -1 or y >= len(board):
         return
     if board[y][x]["revealed"]:
@@ -213,6 +286,13 @@ def flood_open(x, y):
         flood_open(x + 1, y + 1)
 
 def check_win():
+    """
+    Check if all the mines have been flagged
+
+    returns:
+        bool, True if all mines are flagged
+    """
+
     for row in board:
         for cell in row:
             if cell["has"] == "mine" and not cell["flagged"]:
@@ -220,30 +300,41 @@ def check_win():
     return True
 
 
+# Run the app
 if __name__ == '__main__':
+    # Fill the board once
     generate_board()
 
+    # Main loop
     while True:
+        # clear the screen
         os.system("cls")
 
+        # Display the board and the info
         print_info()
         display_board()
+
+        # User time
         get_input()
 
+        # Stop the game if a mine has been opened and reveal the board
         if game_over:
             os.system("cls")
             display_board(True)
             print("Whoops that was a mine. Game over, thx for playing")
             break
 
+        # Check if the user flagged all the mines and reveal the board
         if check_win():
             os.system("cls")
             display_board(True)
 
-
+            # Calculate total time
             end_time = time.perf_counter()
             elapsed = end_time - start_time
+
             print(f"You won! Total moves: {moves}, total time: {elapsed:.0f} seconds")
             break
-
+        
+        # User finished a move
         moves += 1
