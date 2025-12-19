@@ -34,6 +34,15 @@ moves = 0
 start_time = time.perf_counter()
 
 def is_in_bounds(x, y):
+    """
+    Check if the coordinate is on the board
+
+    args:
+        x - int, x coordinate
+        y - int, y coordinate
+    returns:
+        bool - true if coordinate is in bounds, false if not
+    """
     return (x >= 0 and x < BOARD_SIZE) and (y >= 0 and y < BOARD_SIZE)
 
 def get_space():
@@ -189,57 +198,64 @@ def get_input():
     Let the user pick a coordinate and open or flag a cell. If the user opens a mine, game_over is set to true.
     """
     while True:
-      coordinates = input("Enter the coordinates for the next move separated by a space (eg: 6 7): ").strip()
+        coordinates = input("Enter the coordinates for the next move separated by a space (eg: 6 7): ").strip()
       
-      # Get the coordinates
-      if len(coordinates.split(" ")) >= 2:
-          coordinates = coordinates.split(" ")
-          if coordinates[0].isdigit() and coordinates[1].isdigit():
-              x = int(coordinates[0]) - 1
-              y = int(coordinates[1]) - 1
+        # Get the coordinates
+        if len(coordinates.split(" ")) >= 2:
+            coordinates = coordinates.split(" ")
+            if coordinates[0].isdigit() and coordinates[1].isdigit():
+                x = int(coordinates[0]) - 1
+                y = int(coordinates[1]) - 1
 
-              while True:
-                    action = ""
-                    # If user put an action after the coordinates, skip the second input
-                    if len(coordinates) > 2 and coordinates[2] in "open flag":
-                        action = coordinates[2]
-                    else:
-                        # Ask the user for the action
-                        clear_screen()
-                        print_info()
-                        display_board(highlight_x=x, highlight_y=y)
-                        action = input("What do you want to do? (open, flag, cancel): ").lower().strip()
+                if not is_in_bounds(x, y):
+                    clear_screen()
+                    print("invalid coordinates")
+                    print_info()
+                    display_board()
+                    continue
+
+                while True:
+                        action = ""
+                        # If user put an action after the coordinates, skip the second input
+                        if len(coordinates) > 2 and coordinates[2] in "open flag":
+                            action = coordinates[2]
+                        else:
+                            # Ask the user for the action
+                            clear_screen()
+                            print_info()
+                            display_board(highlight_x=x, highlight_y=y)
+                            action = input("What do you want to do? (open, flag, cancel): ").lower().strip()
 
 
-                    if action == "open":
-                        # If the cell has the mine, end the game
-                        if board[y][x]["has"] == "mine":
-                            global game_over
-                            game_over = True
+                        if action == "open":
+                            # If the cell has the mine, end the game
+                            if board[y][x]["has"] == "mine":
+                                global game_over
+                                game_over = True
+                                break
+                            else:
+                                # If cell is empty reveal it
+                                flood_open(x, y)
+                                board[y][x]["revealed"] = True
+                                board[y][x]["flagged"] = False
+                                break
+                        # Flag the cell or unflag if it's flagged
+                        elif action == "flag":
+                            if board[y][x]["revealed"] != True:
+                                board[y][x]["flagged"] = not board[y][x]["flagged"]
+                            break
+                        # Cancel
+                        elif action == "cancel":
+                            global moves
+                            moves -= 1
                             break
                         else:
-                            # If cell is empty reveal it
-                            flood_open(x, y)
-                            board[y][x]["revealed"] = True
-                            board[y][x]["flagged"] = False
-                            break
-                    # Flag the cell or unflag if it's flagged
-                    elif action == "flag":
-                        if board[y][x]["revealed"] != True:
-                            board[y][x]["flagged"] = not board[y][x]["flagged"]
-                        break
-                    # Cancel
-                    elif action == "cancel":
-                        global moves
-                        moves -= 1
-                        break
-                    else:
-                        print("invalid input")
-              break
-          else:
-              print("invalid input")
-      else:
-          print("invalid input")
+                            print("invalid input")
+                break
+            else:
+                print("invalid input")
+        else:
+            print("invalid input")
 
 def print_info():
     """
