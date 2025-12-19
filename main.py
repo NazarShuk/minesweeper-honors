@@ -265,24 +265,18 @@ def flood_open(x, y):
         x - int, the x coordinate of the cell
         y - int, the y coordinate of the cell
     """
-    if x == -1 or x >= len(board) or y == -1 or y >= len(board):
+    if not is_in_bounds(x, y):
         return
     if board[y][x]["revealed"]:
         return
 
     board[y][x]["revealed"] = True
 
-    if get_mines_around(x, y) == 0:        
-        flood_open(x - 1, y - 1)
-        flood_open(x, y - 1)
-        flood_open(x + 1, y - 1)
+    if get_mines_around(x, y) == 0:
+        for x_around in [-1, 0, 1]:
+            for y_around in [-1, 0, 1]:
 
-        flood_open(x - 1, y)
-        flood_open(x + 1, y)
-
-        flood_open(x - 1, y + 1)
-        flood_open(x, y + 1)
-        flood_open(x + 1, y + 1)
+                flood_open(x + x_around, y + y_around)
 
 def check_win():
     """
