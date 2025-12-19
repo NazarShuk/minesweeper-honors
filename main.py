@@ -18,8 +18,8 @@ import os
 import time
 
 # game parameters, constant
-BOARD_SIZE = 8
-MINE_COUNT = 10
+board_size = 8
+mine_count = 10
 
 # Array of arrays representing each cell on the board
 board = []
@@ -43,7 +43,7 @@ def is_in_bounds(x, y):
     returns:
         bool - true if coordinate is in bounds, false if not
     """
-    return (x >= 0 and x < BOARD_SIZE) and (y >= 0 and y < BOARD_SIZE)
+    return (x >= 0 and x < board_size) and (y >= 0 and y < board_size)
 
 def get_space():
     """
@@ -53,7 +53,7 @@ def get_space():
         space - string of spaces
     """
     space = ""
-    for i in range(BOARD_SIZE // 2):
+    for i in range(board_size // 2):
         space += " "
     return space
 
@@ -61,9 +61,9 @@ def generate_board():
     """
     Fill the board with cells. SHOULD ONLY BE USED ONCE, OR IF THE BOARD IS EMPTY.
     """
-    for row in range(BOARD_SIZE):
+    for row in range(board_size):
         current_column = []
-        for column in range(BOARD_SIZE):
+        for column in range(board_size):
             # add a clear cell
             current_column.append({
                 "has":"nothing",
@@ -99,13 +99,13 @@ def is_next_to(x1, y1, x2, y2, radius=1):
     return False
 
 def fill_mines(ignore_x = -1, ignore_y = -1):
-    for i in range(MINE_COUNT):
-        random_x = random.randrange(0, BOARD_SIZE)
-        random_y = random.randrange(0, BOARD_SIZE)
+    for i in range(mine_count):
+        random_x = random.randrange(0, board_size)
+        random_y = random.randrange(0, board_size)
 
         while (ignore_x == random_x and ignore_y == random_y) or is_next_to(ignore_x,ignore_y,random_x,random_y, radius=2) or board[random_y][random_x]["has"] == "mine":
-            random_x = random.randrange(0, BOARD_SIZE)
-            random_y = random.randrange(0, BOARD_SIZE)
+            random_x = random.randrange(0, board_size)
+            random_y = random.randrange(0, board_size)
         
         board[random_y][random_x]["has"] = "mine"
 
@@ -177,7 +177,7 @@ def display_board(reveal = False, highlight_x=-1,highlight_y=-1):
 
     # print the numbers in the top
     print(" ", end=" ")
-    for i in range(BOARD_SIZE):
+    for i in range(board_size):
         print(i + 1, end=get_space())
     print("\n", end="")
 
@@ -305,6 +305,9 @@ def print_info():
             if column["flagged"] == True:
                 mines_left -= 1
     
+    if moves == 0:
+        mines_left = mine_count
+
     current_time = time.perf_counter()
     elapsed = current_time - start_time
     print(f"{mines_left} Mines left || {moves} Moves || {elapsed:.0f} seconds")
@@ -356,8 +359,88 @@ def clear_screen():
     else:
         os.system("clear")
 
+def settings_menu():
+    """
+    Show the setting menu to allow the user to change board size and mine count
+    """
+
+    global board_size
+    global mine_count
+    
+    while True:
+        clear_screen()
+        print("Settings")
+        print(f"Board size: {board_size}x{board_size}")
+        print(f"Mine count: {mine_count}")
+        print()
+        print("1. Change board size\n2. Change mine count\n3. Go back to main menu")
+        choice = input().strip()
+        
+        if choice.isdigit():
+            choice = int(choice)
+
+            if choice == 1:
+                print("Changing board size might mess up the display of the board. Be careful.")
+                new_board_size = input("Enter new board size: ").strip()
+                if new_board_size.isdigit():
+                    new_board_size = int(new_board_size)
+                    if new_board_size > 1:
+                        board_size = new_board_size
+
+                
+            elif choice == 2:
+                new_mine_count = input("Enter new mine count: ").strip()
+                if new_mine_count.isdigit():
+                    new_mine_count = int(new_mine_count)
+                    if new_mine_count > 0:
+                        mine_count = new_mine_count
+            elif choice == 3:
+                break 
+
+TITLE_TEXT = """
+    __  ____                                                       __  __                           
+   /  |/  (_)___  ___  ______      _____  ___  ____  ___  _____   / / / /___  ____  ____  __________
+  / /|_/ / / __ \/ _ \/ ___/ | /| / / _ \/ _ \/ __ \/ _ \/ ___/  / /_/ / __ \/ __ \/ __ \/ ___/ ___/
+ / /  / / / / / /  __(__  )| |/ |/ /  __/  __/ /_/ /  __/ /     / __  / /_/ / / / / /_/ / /  (__  ) 
+/_/  /_/_/_/ /_/\___/____/ |__/|__/\___/\___/ .___/\___/_/     /_/ /_/\____/_/ /_/\____/_/  /____/  
+                                           /_/                                                      
+    """
+BUTTONS_TEXT = """
+                    .-----------------. .----------------. .-------.
+                    |1. Start the game| |2. Game Settings| |3. Quit|
+                    '-----------------' '----------------' '-------'
+    """
+
+def main_menu():
+    """
+    Main menu
+    """
+
+    clear_screen()
+    print(TITLE_TEXT)
+    print(BUTTONS_TEXT)
+    
+    while True:
+        choice = input().strip()
+        
+        if choice.isdigit():
+            choice = int(choice)
+            if choice == 1:
+                break
+            elif choice == 2:
+                settings_menu()
+                clear_screen()
+                print(TITLE_TEXT)
+                print(BUTTONS_TEXT)
+
+            elif choice == 3:
+                os.abort()
+
 # Run the app
 if __name__ == '__main__':
+    # Wait for user in the main menu
+    main_menu()
+
     # Fill the board once
     generate_board()
 
