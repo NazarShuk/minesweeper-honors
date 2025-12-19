@@ -1,6 +1,6 @@
 """
 Nazar Shukhardin
-12/18
+12/19
 
 This is a simple recreation of the game Minesweeper. The board is displayed in the terminal, and you pick the coordinates in the terminal.
 To display colors, ANSI codes are used.
@@ -19,7 +19,7 @@ import time
 
 # game parameters, constant
 BOARD_SIZE = 8
-DIFFICULTY = 3
+MINE_COUNT = 10
 
 # Array of arrays representing each cell on the board
 board = []
@@ -64,22 +64,50 @@ def generate_board():
     for row in range(BOARD_SIZE):
         current_column = []
         for column in range(BOARD_SIZE):
-            if random.randint(1, 20) <= DIFFICULTY:
-                # add a mine
-                current_column.append({
-                    "has":"mine",
-                    "revealed": False,
-                    "flagged": False
-                })
-            else:
-                # add a clear cell
-                current_column.append({
-                    "has":"nothing",
-                    "revealed": False,
-                    "flagged": False
-                })
+            # add a clear cell
+            current_column.append({
+                "has":"nothing",
+                "revealed": False,
+                "flagged": False
+            })
         # add the column to the board
         board.append(current_column)
+
+def is_next_to(x1, y1, x2, y2, radius=1):
+    """
+    Checks if a coordinate is right next to another coordinate
+
+    args:
+        x1 - int, x of the first coordinate
+        y1 - int, y of the first coordinate
+        x2 - int, x of the second coordinate
+        y2 - int, y of the second coordinate
+        radius - int, radius to check around
+    
+    returns:
+        bool
+    """
+    
+    for x in range(-radius, radius + 1):
+        for y in range(-radius, radius + 1):
+            if x == 0 and y == 0:
+                continue
+
+            if x1 + x == x2 and y1 + y == y2:
+                return True
+    
+    return False
+
+def fill_mines(ignore_x = -1, ignore_y = -1):
+    for i in range(MINE_COUNT):
+        random_x = random.randrange(0, BOARD_SIZE)
+        random_y = random.randrange(0, BOARD_SIZE)
+
+        while (ignore_x == random_x and ignore_y == random_y) or is_next_to(ignore_x,ignore_y,random_x,random_y, radius=2) or board[random_y][random_x]["has"] == "mine":
+            random_x = random.randrange(0, BOARD_SIZE)
+            random_y = random.randrange(0, BOARD_SIZE)
+        
+        board[random_y][random_x]["has"] = "mine"
 
 def get_color_by_number(num):
     """
@@ -196,7 +224,13 @@ def display_board(reveal = False, highlight_x=-1,highlight_y=-1):
 def get_input():
     """
     Let the user pick a coordinate and open or flag a cell. If the user opens a mine, game_over is set to true.
+
+    returns
+        tuple (int, int) the coordinates that user picked
     """
+    x = -1
+    y = -1
+    global moves
     while True:
         coordinates = input("Enter the coordinates for the next move separated by a space (eg: 6 7): ").strip()
       
@@ -235,7 +269,8 @@ def get_input():
                                 break
                             else:
                                 # If cell is empty reveal it
-                                flood_open(x, y)
+                                if moves > 0:
+                                    flood_open(x, y)
                                 board[y][x]["revealed"] = True
                                 board[y][x]["flagged"] = False
                                 break
@@ -246,7 +281,6 @@ def get_input():
                             break
                         # Cancel
                         elif action == "cancel":
-                            global moves
                             moves -= 1
                             break
                         else:
@@ -256,6 +290,8 @@ def get_input():
                 print("invalid input")
         else:
             print("invalid input")
+    
+    return (x, y)
 
 def print_info():
     """
@@ -273,18 +309,20 @@ def print_info():
     elapsed = current_time - start_time
     print(f"{mines_left} Mines left || {moves} Moves || {elapsed:.0f} seconds")
 
-def flood_open(x, y):
+def flood_open(x, y, force_fill=False):
     """
     A recursive function to open all empty cells around a cell.
 
     args:
         x - int, the x coordinate of the cell
         y - int, the y coordinate of the cell
+        force_fill - bool, fill even if the cell is already revealed 
     """
     if not is_in_bounds(x, y):
         return
-    if board[y][x]["revealed"]:
-        return
+    if not force_fill:
+        if board[y][x]["revealed"]:
+            return
 
     board[y][x]["revealed"] = True
 
@@ -333,7 +371,10 @@ if __name__ == '__main__':
         display_board()
 
         # User time
-        get_input()
+        x, y = get_input()
+        if moves == 0:
+            fill_mines(x,y)
+            flood_open(x, y, force_fill=True)
 
         # Stop the game if a mine has been opened and reveal the board
         if game_over:
