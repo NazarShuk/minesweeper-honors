@@ -19,7 +19,7 @@ import time
 
 # game parameters, constant
 BOARD_SIZE = 8
-DIFFICULTY = 1
+DIFFICULTY = 3
 
 # Array of arrays representing each cell on the board
 board = []
@@ -33,6 +33,8 @@ moves = 0
 # Start time to record total time
 start_time = time.perf_counter()
 
+def is_in_bounds(x, y):
+    return (x >= 0 and x < BOARD_SIZE) and (y >= 0 and y < BOARD_SIZE)
 
 def get_space():
     """
@@ -114,47 +116,16 @@ def get_mines_around(column_idx, row_idx):
     column = row[column_idx]
     mines_around = 0
 
-    # check the top row
-    if row_idx != 0:
-        # top left
-        if column_idx != 0:
-            if board[row_idx - 1][column_idx - 1]["has"] == "mine":
+    for x in [-1, 0, 1]:
+        for y in [-1, 0, 1]:
+            if not is_in_bounds(row_idx + x, column_idx + y):
+                continue
+            if x == 0 and y == 0:
+                continue
+
+            if board[row_idx + x][column_idx + y]["has"] == "mine":
                 mines_around += 1
-        
-        # top center
-        if board[row_idx - 1][column_idx]["has"] == "mine":
-            mines_around += 1
-        
-        # top right
-        if column_idx != len(row) - 1:
-          if board[row_idx - 1][column_idx + 1]["has"] == "mine":
-            mines_around += 1
-    
-    # left
-    if column_idx != 0:
-        if board[row_idx][column_idx - 1]["has"] == "mine":
-            mines_around += 1
-    
-    # right
-    if column_idx != len(row) - 1:
-        if board[row_idx][column_idx + 1]["has"] == "mine":
-            mines_around += 1
-    
-    # check the bottom row
-    if row_idx != len(board) - 1:
-        # bottom left
-        if column_idx != 0:
-            if board[row_idx + 1][column_idx - 1]["has"] == "mine":
-                mines_around += 1
-        
-        # bottom center
-        if board[row_idx + 1][column_idx]["has"] == "mine":
-            mines_around += 1
-        
-        # bottom right
-        if column_idx != len(row) - 1:
-          if board[row_idx + 1][column_idx + 1]["has"] == "mine":
-            mines_around += 1
+
     return mines_around
 
 def display_board(reveal = False, highlight_x=-1,highlight_y=-1):
