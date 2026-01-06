@@ -1,6 +1,6 @@
 """
 Nazar Shukhardin
-12/19
+1/6/2026
 
 This is a simple recreation of the game Minesweeper. The board is displayed in the terminal, and you pick the coordinates in the terminal.
 To display colors, ANSI codes are used.
@@ -99,6 +99,13 @@ def is_next_to(x1, y1, x2, y2, radius=1):
     return False
 
 def fill_mines(ignore_x = -1, ignore_y = -1):
+    """
+    Fill the board with mines, but make sure to not fill around a specified area.
+    
+    args:
+        ignore_x - integer, the x coordinate of no fill area
+        ignore_y - integer, the x coordinate of no fill area
+    """
     for i in range(mine_count):
         random_x = random.randrange(0, board_size)
         random_y = random.randrange(0, board_size)
@@ -413,9 +420,10 @@ BUTTONS_TEXT = """
 
 def main_menu():
     """
-    Main menu
+    Display the main menu and wait for input.
     """
 
+    # Show the title and buttons
     clear_screen()
     print(TITLE_TEXT)
     print(BUTTONS_TEXT)
@@ -426,14 +434,17 @@ def main_menu():
         if choice.isdigit():
             choice = int(choice)
             if choice == 1:
+                # User chose to start the game, exit out of the loop
                 break
             elif choice == 2:
+                # User chose to open the settings menu
                 settings_menu()
                 clear_screen()
                 print(TITLE_TEXT)
                 print(BUTTONS_TEXT)
 
             elif choice == 3:
+                # User chose to quit
                 os.abort()
 
 # Run the app
