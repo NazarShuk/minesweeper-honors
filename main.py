@@ -19,6 +19,8 @@ import time
 import json
 from hashlib import sha256
 
+ALPHABET = "abcdefghijklmnopqrstuvwxyz"
+
 # game parameters, constant
 board_size = 8
 mine_count = 10
@@ -216,7 +218,7 @@ def display_board(reveal = False, highlight_x=-1,highlight_y=-1):
     # print the numbers in the top
     print(" ", end=" ")
     for i in range(board_size):
-        print(i + 1, end=get_space())
+        print(ALPHABET[i], end=get_space())
     print("\n", end="")
 
     for row_idx in range(len(board)):
@@ -270,64 +272,63 @@ def get_input():
     y = -1
     global moves
     while True:
-        coordinates = input("Enter the coordinates for the next move separated by a space (eg: 6 7): ").strip()
-      
+        user_input = input("Enter the coordinates for the next move (eg: f7): ").strip()
+        user_input = user_input.split(" ")
+
         # Get the coordinates
-        if len(coordinates.split(" ")) >= 2:
-            coordinates = coordinates.split(" ")
-            if coordinates[0].isdigit() and coordinates[1].isdigit():
-                x = int(coordinates[0]) - 1
-                y = int(coordinates[1]) - 1
+        x = None
+        y = None
+        try:
+            x = ALPHABET.index(user_input[0][0])
+            y = int(user_input[0][1]) - 1
+        except:
+            continue
 
-                if not is_in_bounds(x, y):
+        if not is_in_bounds(x, y):
+            clear_screen()
+            print("invalid coordinates")
+            print_info()
+            display_board()
+            continue
+        while True:
+                action = ""
+                # If user put an action after the coordinates, skip the second input
+                if len(user_input) > 1 and user_input[1] in "open flag":
+                    action = user_input[1]
+                else:
+                    # Ask the user for the action
                     clear_screen()
-                    print("invalid coordinates")
                     print_info()
-                    display_board()
-                    continue
-
-                while True:
-                        action = ""
-                        # If user put an action after the coordinates, skip the second input
-                        if len(coordinates) > 2 and coordinates[2] in "open flag":
-                            action = coordinates[2]
-                        else:
-                            # Ask the user for the action
-                            clear_screen()
-                            print_info()
-                            display_board(highlight_x=x, highlight_y=y)
-                            action = input("What do you want to do? (open, flag, cancel): ").lower().strip()
-
-
-                        if action == "open":
-                            # If the cell has the mine, end the game
-                            if board[y][x]["has"] == "mine":
-                                global game_over
-                                game_over = True
-                                break
-                            else:
-                                # If cell is empty reveal it
-                                if moves > 0:
-                                    flood_open(x, y)
-                                board[y][x]["revealed"] = True
-                                board[y][x]["flagged"] = False
-                                break
-                        # Flag the cell or unflag if it's flagged
-                        elif action == "flag":
-                            if board[y][x]["revealed"] != True:
-                                board[y][x]["flagged"] = not board[y][x]["flagged"]
-                            break
-                        # Cancel
-                        elif action == "cancel":
-                            moves -= 1
-                            break
-                        else:
-                            print("invalid input")
-                break
-            else:
-                print("invalid input")
-        else:
-            print("invalid input")
+                    display_board(highlight_x=x, highlight_y=y)
+                    action = input("What do you want to do? (open, flag, cancel): ").lower().strip()
+                if action == "open":
+                    # If the cell has the mine, end the game
+                    if board[y][x]["has"] == "mine":
+                        global game_over
+                        game_over = True
+                        break
+                    else:
+                        # If cell is empty reveal it
+                        if moves > 0:
+                            flood_open(x, y)
+                        board[y][x]["revealed"] = True
+                        board[y][x]["flagged"] = False
+                        break
+                # Flag the cell or unflag if it's flagged
+                elif action == "flag":
+                    if board[y][x]["revealed"] != True:
+                        board[y][x]["flagged"] = not board[y][x]["flagged"]
+                    break
+                # Cancel
+                elif action == "cancel":
+                    if moves != 0:
+                        moves -= 1
+                        break
+                    else:
+                        print("You cannot cancel your first move.")
+                else:
+                    print("invalid input")
+        break
     
     return (x, y)
 
@@ -422,7 +423,7 @@ def settings_menu():
                 new_board_size = input("Enter new board size: ").strip()
                 if new_board_size.isdigit():
                     new_board_size = int(new_board_size)
-                    if new_board_size > 1:
+                    if new_board_size > 1 and new_board_size < len(ALPHABET):
                         board_size = new_board_size
 
                 
@@ -430,7 +431,7 @@ def settings_menu():
                 new_mine_count = input("Enter new mine count: ").strip()
                 if new_mine_count.isdigit():
                     new_mine_count = int(new_mine_count)
-                    if new_mine_count > 0:
+                    if new_mine_count > 0 and new_mine_count < (board_size**2):
                         mine_count = new_mine_count
             elif choice == 3:
                 break 
