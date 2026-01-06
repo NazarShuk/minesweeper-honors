@@ -8,7 +8,7 @@ To display colors, ANSI codes are used.
 One thing that surprised me while making this is how powerful ANSI codes are. Not only can you change the colors of the text, but you can also use effects, like blink.
 Some challenges I faced were indexing the board array when checking for mines around the cell, for example, but after some debugging, I solved it.
 I coded this on my own, with a bit of Google help for ANSI codes.
-I feel proud of my project; I didn't use any AI, which is kind of rare today.
+I feel proud of my project; I didn't use any AI, which is kind of rare today. 
 If I had more time to work on this project, I would probably add a better way for input, because entering coordinates manually kind of sucks.
 """
 
@@ -16,6 +16,8 @@ If I had more time to work on this project, I would probably add a better way fo
 import random
 import os
 import time
+import json
+from hashlib import sha256
 
 # game parameters, constant
 board_size = 8
@@ -32,6 +34,35 @@ moves = 0
 
 # Start time to record total time
 start_time = time.perf_counter()
+
+# Logged in user data
+logged_in_user = None
+logged_in_highscore = None
+
+def calculate_score(board_size, mines, time_seconds):
+    """
+    Calculate a score for the highscore.
+    
+    args:
+        board_size - int, board size
+        mines - int, number of mines
+        time_seconds - float, the time elapsed
+        
+    returns:
+        int - The final calculated score.
+    """
+    time_seconds = max(time_seconds, 1)
+    
+    area = board_size * board_size
+    
+    difficulty_factor = (mines ** 2) / area
+    
+    safe_tiles = area - mines
+    efficiency_factor = safe_tiles / time_seconds
+    
+    final_score = difficulty_factor * efficiency_factor * 1000
+    
+    return int(final_score)
 
 def is_in_bounds(x, y):
     """
@@ -426,6 +457,7 @@ def main_menu():
     # Show the title and buttons
     clear_screen()
     print(TITLE_TEXT)
+    print(f"Welcome back, {logged_in_user}. Your high score is {logged_in_highscore}")
     print(BUTTONS_TEXT)
     
     while True:
@@ -447,8 +479,102 @@ def main_menu():
                 # User chose to quit
                 os.abort()
 
+def password_protect():
+    """
+    This is a simple account system that stores users in a JSON file. Each user has a password and a high score.
+    The password is hashed so you can't just look up someones password easily.
+    """
+
+    users = {}
+    
+    # Load existing users if they exist
+    try:
+        if os.path.exists("users.json"):
+            with open("users.json", "r") as f:
+                users = json.loads(f.read())
+    except:
+        print("Failed to load accounts from a file, ignoring the file.")
+    
+    clear_screen()
+
+    global logged_in_user
+    global logged_in_highscore
+
+    while True:
+        # Ask user if they have an account
+        has_account = input("Do you have an account? (Y, n): ").strip().lower()
+
+        # User has an account, log in
+        if has_account in ["y", "yes"] or has_account == "":
+            # ask for username and password
+            username = input("Username: ").strip()
+            password = input("Password: ").strip()
+
+            # check if account exists
+            if users.get(username) != None:
+                # check if password is correct
+                if users[username]["password"] == sha256(password.encode()).hexdigest():
+                    # set the logged in variables
+                    logged_in_user = username
+                    logged_in_highscore = users[username]["high_score"]
+
+                    break
+                else:
+                    print("Incorrect password")
+            else:
+                print("Account doesn't exist")
+
+        # User doesn't have an account, make a new one
+        elif has_account in ["n", "no"]:
+            print("Enter the credentials for a new account:")
+
+            # ask for username and password
+            username = input("Username: ").strip()
+            password = input("Password: ").strip()
+
+            # make a new account in the dictionary
+            users[username] = {
+                "password": sha256(password.encode()).hexdigest(),
+                "high_score": 0
+            }
+
+            # set logged in variables
+            logged_in_user = username
+            logged_in_highscore = 0
+            
+            # save new dictionary to the file
+            with open("users.json", "w") as f:
+                f.write(json.dumps(users))
+            
+            break
+        else:
+            print("Invalid input")
+            continue
+
+def save_high_score(new_score):
+    """
+    Save a new high score for the user in user.json file
+    
+    args:
+        new_score - int, the new high score to save
+    """
+    users = {}
+    try:
+        with open("users.json", "r") as f:
+            users = json.loads(f.read())
+        
+        users[logged_in_user]["high_score"] = new_score
+        
+        with open("users.json", "w") as f:
+            f.write(json.dumps(users))
+    except:
+        print("Failed to save the new high score.")
+
 # Run the app
 if __name__ == '__main__':
+    # User login
+    password_protect()
+
     # Wait for user in the main menu
     main_menu()
 
@@ -487,6 +613,12 @@ if __name__ == '__main__':
             elapsed = end_time - start_time
 
             print(f"You won! Total moves: {moves}, total time: {elapsed:.0f} seconds")
+
+            score = calculate_score(board_size, mine_count, elapsed)
+            if score > logged_in_highscore:
+                print(f"NEW HIGH SCORE! {score}")
+                save_high_score(score)
+
             break
         
         # User finished a move
