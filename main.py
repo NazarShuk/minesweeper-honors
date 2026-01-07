@@ -1,6 +1,6 @@
 """
 Nazar Shukhardin
-1/6/2026
+1/7/2026
 
 This is a simple recreation of the game Minesweeper. The board is displayed in the terminal, and you pick the coordinates in the terminal.
 To display colors, ANSI codes are used.
@@ -53,15 +53,21 @@ def calculate_score(board_size, mines, time_seconds):
     returns:
         int - The final calculated score.
     """
+
+    # make sure the time is atleast 1 second
     time_seconds = max(time_seconds, 1)
     
+    # calculate the area of the board
     area = board_size * board_size
     
+    # how difficult the board was depending on the mines and area
     difficulty_factor = (mines ** 2) / area
     
+    # how fast the user cleared the board
     safe_tiles = area - mines
     efficiency_factor = safe_tiles / time_seconds
     
+    # combine both factors and multiply by 1000 for precision
     final_score = difficulty_factor * efficiency_factor * 1000
     
     return int(final_score)
@@ -76,6 +82,7 @@ def is_in_bounds(x, y):
     returns:
         bool - true if coordinate is in bounds, false if not
     """
+    
     return (x >= 0 and x < board_size) and (y >= 0 and y < board_size)
 
 def get_space():
@@ -85,7 +92,9 @@ def get_space():
     returns:
         space - string of spaces
     """
+
     space = ""
+
     for i in range(board_size // 2):
         space += " "
     return space
@@ -94,8 +103,11 @@ def generate_board():
     """
     Fill the board with cells. SHOULD ONLY BE USED ONCE, OR IF THE BOARD IS EMPTY.
     """
+
     for row in range(board_size):
+        # create an empty column
         current_column = []
+
         for column in range(board_size):
             # add a clear cell
             current_column.append({
@@ -121,14 +133,20 @@ def is_next_to(x1, y1, x2, y2, radius=1):
         bool
     """
     
+    # check x
     for x in range(-radius, radius + 1):
+        # check y
         for y in range(-radius, radius + 1):
+
+            # skip the middle cell
             if x == 0 and y == 0:
                 continue
-
+            
+            # check surrounding cells
             if x1 + x == x2 and y1 + y == y2:
                 return True
     
+    # default case if not found
     return False
 
 def fill_mines(ignore_x = -1, ignore_y = -1):
@@ -139,14 +157,21 @@ def fill_mines(ignore_x = -1, ignore_y = -1):
         ignore_x - integer, the x coordinate of no fill area
         ignore_y - integer, the x coordinate of no fill area
     """
+
+
     for i in range(mine_count):
+
+        # generate initial random coordinates
         random_x = random.randrange(0, board_size)
         random_y = random.randrange(0, board_size)
 
+        # keep regenerating coordinates until all conditions are met
+        # the mines shouldn't be next to the ignore position in 2 cell radius 
         while (ignore_x == random_x and ignore_y == random_y) or is_next_to(ignore_x,ignore_y,random_x,random_y, radius=2) or board[random_y][random_x]["has"] == "mine":
             random_x = random.randrange(0, board_size)
             random_y = random.randrange(0, board_size)
         
+        # set the final chosen coordinate to be a mine
         board[random_y][random_x]["has"] = "mine"
 
 def get_color_by_number(num):
@@ -159,24 +184,25 @@ def get_color_by_number(num):
     returns:
         ANSI color based on the mines
     """
+
     if num == 1:
-        return "\033[94m"
+        return "\033[94m" # blue
     elif num == 2:
-        return "\033[32m"
+        return "\033[32m" # green
     elif num == 3:
-        return "\033[91m"
+        return "\033[91m" # red
     elif num == 4:
-        return "\033[34m"
+        return "\033[34m" # dark blue
     elif num == 5:
-        return "\033[35m"
+        return "\033[35m" # dark red
     elif num == 6:
-        return "\033[96m"
+        return "\033[96m" # cyan
     elif num == 7:
-        return "\033[37m"
+        return "\033[37m" # dark
     elif num == 8:
-        return "\033[90m"
+        return "\033[90m" # gray
     else:
-        return "\033[95m"
+        return "\033[95m" # any other number will be very pink (shouldn't normally happen in the game)
 
 def get_mines_around(column_idx, row_idx):
     """
@@ -193,13 +219,18 @@ def get_mines_around(column_idx, row_idx):
     column = row[column_idx]
     mines_around = 0
 
+    # for surrounding x
     for x in [-1, 0, 1]:
+        # for surrounding y
         for y in [-1, 0, 1]:
+            # make sure the coordinate is on the board
             if not is_in_bounds(row_idx + x, column_idx + y):
                 continue
+            # skip the middle cell
             if x == 0 and y == 0:
                 continue
-
+            
+            # check if the coordinate has a mine
             if board[row_idx + x][column_idx + y]["has"] == "mine":
                 mines_around += 1
 
@@ -221,23 +252,25 @@ def display_board(reveal = False, highlight_x=-1,highlight_y=-1):
         print(ALPHABET[i], end=get_space())
     print("\n", end="")
 
+    # for each row (Y)
     for row_idx in range(len(board)):
         row = board[row_idx]
         
         # print the numbers on the sides
         print(row_idx + 1, end=" ")
 
-
+        # for each column (X)
         for column_idx in range(len(row)):
             column = row[column_idx]
 
-            # Non mine cells
+            # Non mine cells display logic
             if column["revealed"] == True or (reveal == True and not column["has"] == "mine"):
+                # Get the amount of mines around the cell
                 mines_around = get_mines_around(column_idx, row_idx)
 
                 # Show the mines around if there are any
                 if mines_around > 0:
-                  print(get_color_by_number(mines_around) + str(mines_around) + "\033[0m", end=get_space())
+                    print(get_color_by_number(mines_around) + str(mines_around) + "\033[0m", end=get_space())
                 else:
                     print("\033[90m.\033[0m", end=get_space())
 
@@ -255,6 +288,7 @@ def display_board(reveal = False, highlight_x=-1,highlight_y=-1):
             
             # Show unopened cells
             else:
+                # Highlight
                 if highlight_x == column_idx and highlight_y == row_idx:
                     print("\033[91;40;6m■\033[0m", end=get_space())
                 else:
@@ -268,9 +302,12 @@ def get_input():
     returns
         tuple (int, int) the coordinates that user picked
     """
+    # set default choice
     x = -1
     y = -1
+    
     global moves
+
     while True:
         user_input = input("Enter the coordinates for the next move (eg: f7): ").strip()
         user_input = user_input.split(" ")
@@ -278,18 +315,24 @@ def get_input():
         # Get the coordinates
         x = None
         y = None
+
+        # parse the user input (first character should be a letter and second is a number)
         try:
             x = ALPHABET.index(user_input[0][0])
             y = int(user_input[0][1]) - 1
         except:
+            # do it again until input is valid
             continue
 
+        # check if the user coordinates are on the board
         if not is_in_bounds(x, y):
             clear_screen()
-            print("invalid coordinates")
             print_info()
             display_board()
+            print("invalid coordinates")
             continue
+        
+        # loop until action is selected
         while True:
                 action = ""
                 # If user put an action after the coordinates, skip the second input
@@ -301,6 +344,8 @@ def get_input():
                     print_info()
                     display_board(highlight_x=x, highlight_y=y)
                     action = input("What do you want to do? (open, flag, cancel): ").lower().strip()
+                
+                # Reveal the selected cell or blow up D:
                 if action == "open":
                     # If the cell has the mine, end the game
                     if board[y][x]["has"] == "mine":
@@ -314,11 +359,13 @@ def get_input():
                         board[y][x]["revealed"] = True
                         board[y][x]["flagged"] = False
                         break
+                
                 # Flag the cell or unflag if it's flagged
                 elif action == "flag":
                     if board[y][x]["revealed"] != True:
                         board[y][x]["flagged"] = not board[y][x]["flagged"]
                     break
+
                 # Cancel
                 elif action == "cancel":
                     if moves != 0:
@@ -336,7 +383,10 @@ def print_info():
     """
     Shows how many mines are left, how many moves the user did, and how much time has passed.
     """
+
     mines_left = 0
+
+    # get the amount of mines left on the board
     for row in board:
         for column in row:
             if column["has"] == "mine":
@@ -344,11 +394,14 @@ def print_info():
             if column["flagged"] == True:
                 mines_left -= 1
     
+    # since there aren't any mines on the first move, set it artificially
     if moves == 0:
         mines_left = mine_count
 
+    # calculate the time passed
     current_time = time.perf_counter()
     elapsed = current_time - start_time
+
     print(f"{mines_left} Mines left || {moves} Moves || {elapsed:.0f} seconds")
 
 def flood_open(x, y, force_fill=False):
@@ -360,14 +413,20 @@ def flood_open(x, y, force_fill=False):
         y - int, the y coordinate of the cell
         force_fill - bool, fill even if the cell is already revealed 
     """
+
+    # check if coordinate is on the board
     if not is_in_bounds(x, y):
         return
+    
+    # stop if the cell is already revealed. force fill is only used for the first move
     if not force_fill:
         if board[y][x]["revealed"]:
             return
 
+    # reveal the current cell
     board[y][x]["revealed"] = True
 
+    # flood open cells around
     if get_mines_around(x, y) == 0:
         for x_around in [-1, 0, 1]:
             for y_around in [-1, 0, 1]:
@@ -393,10 +452,21 @@ def clear_screen():
     Crossplatform cls
     """
 
+    # if user is on windows
     if os.name == "nt":
         os.system("cls")
     else:
+        # any other system uses clear instead of cls
         os.system("clear")
+
+SETTINGS_TEXT = """
+   _____      __  __  _                 
+  / ___/___  / /_/ /_(_)___  ____ ______
+  \__ \/ _ \/ __/ __/ / __ \/ __ `/ ___/
+ ___/ /  __/ /_/ /_/ / / / / /_/ (__  ) 
+/____/\___/\__/\__/_/_/ /_/\__, /____/  
+                          /____/        
+"""
 
 def settings_menu():
     """
@@ -407,32 +477,41 @@ def settings_menu():
     global mine_count
     
     while True:
+        # display the settings menu
         clear_screen()
-        print("Settings")
+        print(SETTINGS_TEXT)
         print(f"Board size: {board_size}x{board_size}")
         print(f"Mine count: {mine_count}")
         print()
         print("1. Change board size\n2. Change mine count\n3. Go back to main menu")
+        
+        # take input from user
         choice = input().strip()
         
+        # make sure the choice is a number
         if choice.isdigit():
             choice = int(choice)
 
+            # change the board size 
             if choice == 1:
                 print("Changing board size might mess up the display of the board. Be careful.")
                 new_board_size = input("Enter new board size: ").strip()
+                
                 if new_board_size.isdigit():
                     new_board_size = int(new_board_size)
                     if new_board_size > 1 and new_board_size < len(ALPHABET):
                         board_size = new_board_size
 
-                
+            # change the mine count
             elif choice == 2:
                 new_mine_count = input("Enter new mine count: ").strip()
+
                 if new_mine_count.isdigit():
                     new_mine_count = int(new_mine_count)
                     if new_mine_count > 0 and new_mine_count < (board_size**2):
                         mine_count = new_mine_count
+            
+            # exit out of settings
             elif choice == 3:
                 break 
 
@@ -511,6 +590,9 @@ def password_protect():
             username = input("Username: ").strip()
             password = input("Password: ").strip()
 
+            # make sure username and password is not empty
+            if not username or not password: continue
+
             # check if account exists
             if users.get(username) != None:
                 # check if password is correct
@@ -532,6 +614,9 @@ def password_protect():
             # ask for username and password
             username = input("Username: ").strip()
             password = input("Password: ").strip()
+
+            # make sure username and password is not empty
+            if not username or not password: continue
 
             # make a new account in the dictionary
             users[username] = {
@@ -581,7 +666,7 @@ if __name__ == '__main__':
 
     # Fill the board once
     generate_board()
-
+    start_time = time.perf_counter()
     # Main loop
     while True:
         # clear the screen
