@@ -247,7 +247,7 @@ def display_board(reveal = False, highlight_x=-1,highlight_y=-1):
     """
 
     # print the numbers in the top
-    print(" ", end=" ")
+    print("\033[8m00\033[0m", end=" ")
     for i in range(board_size):
         print(ALPHABET[i], end=get_space())
     print("\n", end="")
@@ -257,7 +257,8 @@ def display_board(reveal = False, highlight_x=-1,highlight_y=-1):
         row = board[row_idx]
         
         # print the numbers on the sides
-        print(row_idx + 1, end=" ")
+        displayed_number = row_idx + 1
+        print(f"{displayed_number:02d}", end=" ")
 
         # for each column (X)
         for column_idx in range(len(row)):
@@ -494,8 +495,12 @@ def settings_menu():
 
             # change the board size 
             if choice == 1:
-                print("Changing board size might mess up the display of the board. Be careful.")
-                new_board_size = input("Enter new board size: ").strip()
+                clear_screen()
+                print(f"Board size: {board_size}x{board_size}")
+                print(f"Maximum: {len(ALPHABET) - 1}, minimum: 2")
+                print()
+                
+                new_board_size = input("Enter new board size (ex 10): ").strip()
                 
                 if new_board_size.isdigit():
                     new_board_size = int(new_board_size)
