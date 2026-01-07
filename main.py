@@ -155,7 +155,7 @@ def fill_mines(ignore_x = -1, ignore_y = -1):
     
     args:
         ignore_x - integer, the x coordinate of no fill area
-        ignore_y - integer, the x coordinate of no fill area
+        ignore_y - integer, the y coordinate of no fill area
     """
 
 
