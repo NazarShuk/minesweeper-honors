@@ -338,7 +338,7 @@ def get_input():
         # parse the user input (first character should be a letter and second is a number)
         try:
             x = ALPHABET.index(user_input[0][0])
-            y = int(user_input[0][1]) - 1
+            y = int("".join(user_input[0][1:])) - 1
         except:
             # do it again until input is valid
             continue
