@@ -328,7 +328,9 @@ def get_input():
     global moves
 
     while True:
-        user_input = input("Enter the coordinates for the next move (eg: f7): ").strip()
+        user_input = input("Enter the coordinates for the next move (eg: f7): ").strip().lower()
+        if user_input == "": continue
+
         user_input = user_input.split(" ")
 
         # Get the coordinates
@@ -556,6 +558,10 @@ def settings_menu():
 
             # change the mine count
             elif choice == 3:
+                clear_screen()
+                print(f"Mine count: {mine_count}")
+                print(f"Maximum: {board_size**2 - 1}, minimum: 1")
+                print()
                 new_mine_count = input("Enter new mine count: ").strip()
 
                 if new_mine_count.isdigit():
@@ -590,12 +596,13 @@ def main_menu():
     """
 
     # Show the title and buttons
-    clear_screen()
-    print(TITLE_TEXT)
-    print(f"Welcome back, {logged_in_user}. Your high score is {logged_in_highscore}")
-    print(BUTTONS_TEXT)
     
     while True:
+        clear_screen()
+        print(TITLE_TEXT)
+        print(f"Welcome back, {logged_in_user}. Your high score is {logged_in_highscore}")
+        print(BUTTONS_TEXT)
+        
         choice = input().strip()
         
         if choice.isdigit():
