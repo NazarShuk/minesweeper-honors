@@ -1,6 +1,6 @@
 """
 Nazar Shukhardin
-1/7/2026
+1/8/2026
 
 This is a simple recreation of the game Minesweeper. The board is displayed in the terminal, and you pick the coordinates in the terminal.
 To display colors, ANSI codes are used.
@@ -19,7 +19,25 @@ import time
 import json
 from hashlib import sha256
 
+# used for one of the axis on the board
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"
+
+# difficulty presets, similar to original minesweeper
+DIFFICULTY_PRESETS = {
+    "beginner": {
+        "board_size": 8,
+        "mine_count": 10
+    },
+    "intermediate": {
+        "board_size": 16,
+        "mine_count": 40
+    },
+    "expert": {
+        "board_size": 24,
+        "mine_count": 99
+    }
+}
+selected_difficulty = "beginner"
 
 # game parameters, constant
 board_size = 8
@@ -95,7 +113,7 @@ def get_space():
 
     space = ""
 
-    for i in range(board_size // 2):
+    for i in range(4):
         space += " "
     return space
 
@@ -476,15 +494,17 @@ def settings_menu():
 
     global board_size
     global mine_count
+    global selected_difficulty
     
     while True:
         # display the settings menu
         clear_screen()
         print(SETTINGS_TEXT)
+        print(f"Difficulty: {selected_difficulty.capitalize()}")
         print(f"Board size: {board_size}x{board_size}")
         print(f"Mine count: {mine_count}")
         print()
-        print("1. Change board size\n2. Change mine count\n3. Go back to main menu")
+        print("1. Change difficulty\n2. Change board size\n3. Change mine count\n4. Go back to main menu")
         
         # take input from user
         choice = input().strip()
@@ -493,8 +513,33 @@ def settings_menu():
         if choice.isdigit():
             choice = int(choice)
 
-            # change the board size 
             if choice == 1:
+                clear_screen()
+                print(f"Difficulty: {selected_difficulty.capitalize()}\n")
+
+                print("Available difficulties")
+                print("| {:<15} | {:^15} | {:>15} |".format("Name", "Board size", "Mines"))
+
+                for difficulty in DIFFICULTY_PRESETS.keys():
+                    difficulty_settings = DIFFICULTY_PRESETS[difficulty]
+                    print("| {:<15} | {:^15} | {:>15} |".format(difficulty.capitalize(), difficulty_settings["board_size"], difficulty_settings["mine_count"]))
+                
+                print()
+                
+                while True:
+                    new_difficulty = input("Select the new difficulty: ").strip().lower()
+                    if new_difficulty == "":
+                        break
+
+                    if new_difficulty in DIFFICULTY_PRESETS.keys():
+                        selected_difficulty = new_difficulty
+                        board_size = DIFFICULTY_PRESETS[selected_difficulty]["board_size"]
+                        mine_count = DIFFICULTY_PRESETS[selected_difficulty]["mine_count"]
+                        break
+
+
+            # change the board size 
+            elif choice == 2:
                 clear_screen()
                 print(f"Board size: {board_size}x{board_size}")
                 print(f"Maximum: {len(ALPHABET) - 1}, minimum: 2")
@@ -504,20 +549,25 @@ def settings_menu():
                 
                 if new_board_size.isdigit():
                     new_board_size = int(new_board_size)
+                    
                     if new_board_size > 1 and new_board_size < len(ALPHABET):
                         board_size = new_board_size
+                        selected_difficulty = "CUSTOM"
 
             # change the mine count
-            elif choice == 2:
+            elif choice == 3:
                 new_mine_count = input("Enter new mine count: ").strip()
 
                 if new_mine_count.isdigit():
                     new_mine_count = int(new_mine_count)
+
                     if new_mine_count > 0 and new_mine_count < (board_size**2):
                         mine_count = new_mine_count
+                        selected_difficulty = "CUSTOM"
+
             
             # exit out of settings
-            elif choice == 3:
+            elif choice == 4:
                 break 
 
 TITLE_TEXT = """
