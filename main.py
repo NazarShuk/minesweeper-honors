@@ -18,6 +18,10 @@ import os
 import time
 import json
 from hashlib import sha256
+import msvcrt
+import sys
+
+
 
 # used for one of the axis on the board
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"
@@ -289,9 +293,15 @@ def display_board(reveal = False, highlight_x=-1,highlight_y=-1):
 
                 # Show the mines around if there are any
                 if mines_around > 0:
-                    print(get_color_by_number(mines_around) + str(mines_around) + "\033[0m", end=get_space())
+                    if highlight_x == column_idx and highlight_y == row_idx:
+                        print("\033[91;40;6m" + str(mines_around) + "\033[0m", end=get_space())
+                    else:
+                        print(get_color_by_number(mines_around) + str(mines_around) + "\033[0m", end=get_space())
                 else:
-                    print("\033[90m.\033[0m", end=get_space())
+                    if highlight_x == column_idx and highlight_y == row_idx:
+                        print("\033[91;40;6m.\033[0m", end=get_space())
+                    else:
+                        print("\033[90m.\033[0m", end=get_space())
 
             # Mark the mines with an X when the whole board is revealed
             elif column["has"] == "mine" and reveal:
@@ -314,6 +324,31 @@ def display_board(reveal = False, highlight_x=-1,highlight_y=-1):
                     print("\033[90m■\033[0m", end=get_space())
         print("\n")
 
+def wait_for_key():
+    """
+    Waits until user presses a key and then returns they key that was pressed.
+
+    returns:
+        string - key that was pressed
+    """
+
+    # get the pressed key
+    key = msvcrt.getch()
+    
+    # check if the key is a "special" key
+    if key in (b'\x00', b'\xe0'):
+        key = msvcrt.getch()
+        return f"special_{key.hex()}"
+    
+    # if not special try to decode the key
+    try:
+        return key.decode('utf-8')
+    except UnicodeDecodeError:
+        return key.hex()
+
+selected_x = 0
+selected_y = 0
+
 def get_input():
     """
     Let the user pick a coordinate and open or flag a cell. If the user opens a mine, game_over is set to true.
@@ -322,81 +357,54 @@ def get_input():
         tuple (int, int) the coordinates that user picked
     """
     # set default choice
-    x = -1
-    y = -1
-    
+    global selected_x
+    global selected_y
     global moves
 
-    while True:
-        user_input = input("Enter the coordinates for the next move (eg: f7): ").strip().lower()
-        if user_input == "": continue
-
-        user_input = user_input.split(" ")
-
-        # Get the coordinates
-        x = None
-        y = None
-
-        # parse the user input (first character should be a letter and second is a number)
-        try:
-            x = ALPHABET.index(user_input[0][0])
-            y = int("".join(user_input[0][1:])) - 1
-        except:
-            # do it again until input is valid
-            continue
-
-        # check if the user coordinates are on the board
-        if not is_in_bounds(x, y):
-            clear_screen()
-            print_info()
-            display_board()
-            print("invalid coordinates")
-            continue
+    x = selected_x
+    y = selected_y
+    
         
-        # loop until action is selected
-        while True:
-                action = ""
-                # If user put an action after the coordinates, skip the second input
-                if len(user_input) > 1 and user_input[1] in "open flag":
-                    action = user_input[1]
-                else:
-                    # Ask the user for the action
-                    clear_screen()
-                    print_info()
-                    display_board(highlight_x=x, highlight_y=y)
-                    action = input("What do you want to do? (open, flag, cancel): ").lower().strip()
-                
-                # Reveal the selected cell or blow up D:
-                if action == "open":
-                    # If the cell has the mine, end the game
-                    if board[y][x]["has"] == "mine":
-                        global game_over
-                        game_over = True
-                        break
-                    else:
-                        # If cell is empty reveal it
-                        if moves > 0:
-                            flood_open(x, y)
-                        board[y][x]["revealed"] = True
-                        board[y][x]["flagged"] = False
-                        break
-                
-                # Flag the cell or unflag if it's flagged
-                elif action == "flag":
-                    if board[y][x]["revealed"] != True:
-                        board[y][x]["flagged"] = not board[y][x]["flagged"]
-                    break
-
-                # Cancel
-                elif action == "cancel":
-                    if moves != 0:
-                        moves -= 1
-                        break
-                    else:
-                        print("You cannot cancel your first move.")
-                else:
-                    print("invalid input")
-        break
+    while True:
+        clear_screen()
+        print_info()
+        display_board(highlight_x=x, highlight_y=y)
+        print("Use arrow keys to select a cell. Press O to open, and F to flag")
+        print(f"{ALPHABET[x]}{y + 1}")
+        
+        key = wait_for_key()
+        if key == "special_48":
+            if y >= 0:
+                y -= 1
+        elif key == "special_50":
+            if y < board_size - 1:
+                y += 1
+        elif key == "special_4b":
+            if x >=0:
+                x -= 1
+        elif key == "special_4d":
+            if x < board_size - 1:
+                x += 1
+        elif key == "o":
+            if board[y][x]["has"] == "mine":
+                global game_over
+                game_over = True
+            else:
+                # If cell is empty reveal it
+                if moves > 0:
+                    flood_open(x, y)
+                board[y][x]["revealed"] = True
+                board[y][x]["flagged"] = False
+            break
+        elif key == "f":
+            if board[y][x]["revealed"] != True:
+                board[y][x]["flagged"] = not board[y][x]["flagged"]
+            break
+        elif key == "\x03":
+            sys.exit(0)
+    
+        selected_x = x
+        selected_y = y
     
     return (x, y)
 
@@ -475,6 +483,7 @@ def clear_screen():
 
     # if user is on windows
     if os.name == "nt":
+        os.chdir('C:\\')
         os.system("cls")
     else:
         # any other system uses clear instead of cls
@@ -602,7 +611,7 @@ def main_menu():
         print(TITLE_TEXT)
         print(f"Welcome back, {logged_in_user}. Your high score is {logged_in_highscore}")
         print(BUTTONS_TEXT)
-        
+
         choice = input().strip()
         
         if choice.isdigit():
@@ -619,7 +628,7 @@ def main_menu():
 
             elif choice == 3:
                 # User chose to quit
-                os.abort()
+                sys.exit(0)
 
 def password_protect():
     """
