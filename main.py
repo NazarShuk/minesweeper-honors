@@ -29,7 +29,7 @@ ALPHABET = "abcdefghijklmnopqrstuvwxyz"
 DIFFICULTY_PRESETS = {
     "beginner": {
         "board_size": 8,
-        "mine_count": 10
+        "mine_count": 1
     },
     "intermediate": {
         "board_size": 16,
@@ -388,7 +388,7 @@ def get_input():
         clear_screen()
         print_info()
         display_board(highlight_x=x, highlight_y=y)
-        print("Use arrow keys to select a cell. Press Enter to open, and F to flag. Ctrl + C to quit.")
+        print("Use arrow keys to select a cell. Press Enter to open, and F to flag. Q to quit.")
         print(f"{ALPHABET[x]}{y + 1}")
         
         key = wait_for_key()
@@ -419,7 +419,7 @@ def get_input():
             if board[y][x]["revealed"] != True:
                 board[y][x]["flagged"] = not board[y][x]["flagged"]
             break
-        elif key == "\x03": # ctrl+c
+        elif key == "q": # ctrl+c
             sys.exit(0)
 
         # update saved coordinates
@@ -490,12 +490,14 @@ def check_win():
         bool, True if all mines are flagged
     """
 
+    # check if all mines are flagged
     for row in board:
         for cell in row:
             if cell["has"] == "mine" and not cell["flagged"]:
                 return False
             if cell["has"] != "mine" and cell["flagged"]:
                 return False
+
     return True
 
 def clear_screen():
