@@ -11,7 +11,6 @@ file (for some reason some types were being converted to strings or integers whe
 I coded all of this on my own, I did not use AI, but I did use Google and Stack Overflow. I can describe all of this as "fun", I could have just used ChatGPT
 to generate all of the code for me and easily pass, but it was more fun for me to figure stuff out myself. If I had more time, I would have added a better
 input system, and maybe a GUI.
-
 """
 
 # imports
@@ -62,6 +61,23 @@ start_time = time.perf_counter()
 # Logged in user data
 logged_in_user = None
 logged_in_highscore = None
+
+def input_with_exit(prompt):
+    """
+    Custom input function that allows the user to quit at any time using Q
+
+    args:
+        prompt - string, the prompt for the input
+    
+    returns:
+        any, result from the input
+    """
+    result = input(prompt)
+    if result.lower().strip() == "quit":
+        os.abort() # sys.exit(0) doesn't work here
+        return
+    
+    return result
 
 def calculate_score(board_size, mines, time_seconds):
     """
@@ -346,6 +362,7 @@ def wait_for_key():
     except UnicodeDecodeError:
         return key.hex()
 
+# save coordinates for next move
 selected_x = 0
 selected_y = 0
 
@@ -361,31 +378,33 @@ def get_input():
     global selected_y
     global moves
 
+    # load previously selected coordinates
     x = selected_x
     y = selected_y
     
         
     while True:
+        # display the board with the highlighted selected coordinate
         clear_screen()
         print_info()
         display_board(highlight_x=x, highlight_y=y)
-        print("Use arrow keys to select a cell. Press Enter to open, and F to flag")
+        print("Use arrow keys to select a cell. Press Enter to open, and F to flag. Ctrl + C to quit.")
         print(f"{ALPHABET[x]}{y + 1}")
         
         key = wait_for_key()
-        if key == "special_48":
+        if key == "special_48": # up arrow
             if y >= 0:
                 y -= 1
-        elif key == "special_50":
+        elif key == "special_50": # down arrow
             if y < board_size - 1:
                 y += 1
-        elif key == "special_4b":
+        elif key == "special_4b": # left arrow
             if x >=0:
                 x -= 1
-        elif key == "special_4d":
+        elif key == "special_4d": # right arrow
             if x < board_size - 1:
                 x += 1
-        elif key == "\r":
+        elif key == "\r": # enter key
             if board[y][x]["has"] == "mine":
                 global game_over
                 game_over = True
@@ -396,13 +415,14 @@ def get_input():
                 board[y][x]["revealed"] = True
                 board[y][x]["flagged"] = False
             break
-        elif key == "f":
+        elif key == "f": # f key
             if board[y][x]["revealed"] != True:
                 board[y][x]["flagged"] = not board[y][x]["flagged"]
             break
-        elif key == "\x03":
+        elif key == "\x03": # ctrl+c
             sys.exit(0)
-    
+
+        # update saved coordinates
         selected_x = x
         selected_y = y
     
@@ -480,16 +500,10 @@ def check_win():
 
 def clear_screen():
     """
-    Crossplatform cls
+    Clear the screen using an ANSI code.
     """
 
-    # if user is on windows
-    if os.name == "nt":
-        os.chdir('C:\\')
-        os.system("cls")
-    else:
-        # any other system uses clear instead of cls
-        os.system("clear")
+    print("\033[2J\033[H", end="", flush=True)
 
 SETTINGS_TEXT = """
    _____      __  __  _                 
@@ -520,7 +534,12 @@ def settings_menu():
         print("1. Change difficulty\n2. Go back to main menu")
         
         # take input from user
-        choice = input().strip()
+        choice = None
+        while choice == None:
+            try:
+                choice = input_with_exit().strip()
+            except:
+                print("Invalid Input")
         
         # make sure the choice is a number
         if choice.isdigit():
@@ -541,7 +560,12 @@ def settings_menu():
                 print()
                 
                 while True:
-                    new_difficulty = input("Select the new difficulty: ").strip().lower()
+                    new_difficulty = None
+                    while new_difficulty == None:
+                        try:
+                            new_difficulty = input_with_exit("Select the new difficulty: ").strip().lower()
+                        except:
+                            print("Invalid Input")
                     if new_difficulty == "":
                         break
 
@@ -582,7 +606,12 @@ def main_menu():
         print(f"Welcome back, {logged_in_user}. Your high score is {logged_in_highscore}")
         print(BUTTONS_TEXT)
 
-        choice = input().strip()
+        choice = None
+        while choice == None:
+            try:
+                choice = input_with_exit().strip()
+            except:
+                print("Invalid Input")
         
         if choice.isdigit():
             choice = int(choice)
@@ -623,13 +652,25 @@ def password_protect():
 
     while True:
         # Ask user if they have an account
-        has_account = input("Do you have an account? (Y, n): ").strip().lower()
-
+        has_account = None
+        while has_account == None:
+            try:
+                has_account = input_with_exit("Do you have an account? (Y, n): ").strip().lower()
+            except:
+                print("Invalid Input")
+        
         # User has an account, log in
         if has_account in ["y", "yes"] or has_account == "":
             # ask for username and password
-            username = input("Username: ").strip()
-            password = input("Password: ").strip()
+            username = None
+            password = None
+
+            while username == None and password == None:
+                try:
+                    username = input_with_exit("Username: ").strip()
+                    password = input_with_exit("Password: ").strip()
+                except:
+                    print("Invalid Input")
 
             # make sure username and password is not empty
             if not username or not password: continue
@@ -653,11 +694,31 @@ def password_protect():
             print("Enter the credentials for a new account:")
 
             # ask for username and password
-            username = input("Username: ").strip()
-            password = input("Password: ").strip()
+            username = None
+            password = None
+
+            while username == None and password == None:
+                try:
+                    username = input_with_exit("Username: ").strip()
+                    password = input_with_exit("Password: ").strip()
+                except:
+                    print("Invalid Input")
 
             # make sure username and password is not empty
             if not username or not password: continue
+
+            # make sure password is alphanumerical (rubric)
+            if not password.isalnum(): 
+                print("Password must only contain letters and numbers.")
+                continue
+            
+            # username and password length requirements
+            if len(username) < 5:
+                print("Username must be atleast 5 characters long.")
+                continue
+
+            if len(password) < 8:
+                print("Password must be atleast 8 characters long.")
 
             # make a new account in the dictionary
             users[username] = {
