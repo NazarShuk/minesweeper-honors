@@ -416,9 +416,11 @@ def get_input():
                 board[y][x]["flagged"] = False
             break
         elif key == "f": # f key
-            if board[y][x]["revealed"] != True:
-                board[y][x]["flagged"] = not board[y][x]["flagged"]
-            break
+            if moves > 0:
+                if board[y][x]["revealed"] != True:
+                    board[y][x]["flagged"] = not board[y][x]["flagged"]
+                    break
+            continue
         elif key == "q": # ctrl+c
             sys.exit(0)
 
