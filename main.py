@@ -29,7 +29,7 @@ ALPHABET = "abcdefghijklmnopqrstuvwxyz"
 DIFFICULTY_PRESETS = {
     "beginner": {
         "board_size": 8,
-        "mine_count": 1
+        "mine_count": 10
     },
     "intermediate": {
         "board_size": 16,
