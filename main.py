@@ -1,15 +1,17 @@
 """
 Nazar Shukhardin
-1/8/2026
+1/9/2026
 
-This is a simple recreation of the game Minesweeper. The board is displayed in the terminal, and you pick the coordinates in the terminal.
-To display colors, ANSI codes are used.
+This is a simple recreation of the classic computer game, Minesweeper.
 
-One thing that surprised me while making this is how powerful ANSI codes are. Not only can you change the colors of the text, but you can also use effects, like blink.
-Some challenges I faced were indexing the board array when checking for mines around the cell, for example, but after some debugging, I solved it.
-I coded this on my own, with a bit of Google help for ANSI codes.
-I feel proud of my project; I didn't use any AI, which is kind of rare today. 
-If I had more time to work on this project, I would probably add a better way for input, because entering coordinates manually kind of sucks.
+REFLECTION:
+When I first started coding this project, I thought it would be pretty difficult to figure how the original game works and then recreate it.
+As it turns out, it wasn't that difficult. Some challenges I faced were making the "flood-fill" function for the first move, parsing the users.json
+file (for some reason some types were being converted to strings or integers when parsing), and making sure all inputs are protected and don't raise an error.
+I coded all of this on my own, I did not use AI, but I did use Google and Stack Overflow. I can describe all of this as "fun", I could have just used ChatGPT
+to generate all of the code for me and easily pass, but it was more fun for me to figure stuff out myself. If I had more time, I would have added a better
+input system, and maybe a GUI.
+
 """
 
 # imports
@@ -20,8 +22,6 @@ import json
 from hashlib import sha256
 import msvcrt
 import sys
-
-
 
 # used for one of the axis on the board
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"
@@ -44,8 +44,8 @@ DIFFICULTY_PRESETS = {
 selected_difficulty = "beginner"
 
 # game parameters, constant
-board_size = 8
-mine_count = 10
+board_size = DIFFICULTY_PRESETS[selected_difficulty]["board_size"]
+mine_count = DIFFICULTY_PRESETS[selected_difficulty]["mine_count"]
 
 # Array of arrays representing each cell on the board
 board = []
@@ -369,7 +369,7 @@ def get_input():
         clear_screen()
         print_info()
         display_board(highlight_x=x, highlight_y=y)
-        print("Use arrow keys to select a cell. Press O to open, and F to flag")
+        print("Use arrow keys to select a cell. Press Enter to open, and F to flag")
         print(f"{ALPHABET[x]}{y + 1}")
         
         key = wait_for_key()
@@ -385,7 +385,7 @@ def get_input():
         elif key == "special_4d":
             if x < board_size - 1:
                 x += 1
-        elif key == "o":
+        elif key == "\r":
             if board[y][x]["has"] == "mine":
                 global game_over
                 game_over = True
@@ -474,6 +474,8 @@ def check_win():
         for cell in row:
             if cell["has"] == "mine" and not cell["flagged"]:
                 return False
+            if cell["has"] != "mine" and cell["flagged"]:
+                return False
     return True
 
 def clear_screen():
@@ -515,7 +517,7 @@ def settings_menu():
         print(f"Board size: {board_size}x{board_size}")
         print(f"Mine count: {mine_count}")
         print()
-        print("1. Change difficulty\n2. Change board size\n3. Change mine count\n4. Go back to main menu")
+        print("1. Change difficulty\n2. Go back to main menu")
         
         # take input from user
         choice = input().strip()
@@ -530,6 +532,7 @@ def settings_menu():
 
                 print("Available difficulties")
                 print("| {:<15} | {:^15} | {:>15} |".format("Name", "Board size", "Mines"))
+                print("| {:<15} | {:^15} | {:>15} |".format("-----", "-----", "-----"))
 
                 for difficulty in DIFFICULTY_PRESETS.keys():
                     difficulty_settings = DIFFICULTY_PRESETS[difficulty]
@@ -548,49 +551,16 @@ def settings_menu():
                         mine_count = DIFFICULTY_PRESETS[selected_difficulty]["mine_count"]
                         break
 
-
-            # change the board size 
-            elif choice == 2:
-                clear_screen()
-                print(f"Board size: {board_size}x{board_size}")
-                print(f"Maximum: {len(ALPHABET) - 1}, minimum: 2")
-                print()
-                
-                new_board_size = input("Enter new board size (ex 10): ").strip()
-                
-                if new_board_size.isdigit():
-                    new_board_size = int(new_board_size)
-                    
-                    if new_board_size > 1 and new_board_size < len(ALPHABET):
-                        board_size = new_board_size
-                        selected_difficulty = "CUSTOM"
-
-            # change the mine count
-            elif choice == 3:
-                clear_screen()
-                print(f"Mine count: {mine_count}")
-                print(f"Maximum: {board_size**2 - 1}, minimum: 1")
-                print()
-                new_mine_count = input("Enter new mine count: ").strip()
-
-                if new_mine_count.isdigit():
-                    new_mine_count = int(new_mine_count)
-
-                    if new_mine_count > 0 and new_mine_count < (board_size**2):
-                        mine_count = new_mine_count
-                        selected_difficulty = "CUSTOM"
-
-            
             # exit out of settings
-            elif choice == 4:
+            elif choice == 2:
                 break 
 
 TITLE_TEXT = """
-    __  ____                                                       __  __                           
+    __  ____                                                       __  __
    /  |/  (_)___  ___  ______      _____  ___  ____  ___  _____   / / / /___  ____  ____  __________
   / /|_/ / / __ \/ _ \/ ___/ | /| / / _ \/ _ \/ __ \/ _ \/ ___/  / /_/ / __ \/ __ \/ __ \/ ___/ ___/
- / /  / / / / / /  __(__  )| |/ |/ /  __/  __/ /_/ /  __/ /     / __  / /_/ / / / / /_/ / /  (__  ) 
-/_/  /_/_/_/ /_/\___/____/ |__/|__/\___/\___/ .___/\___/_/     /_/ /_/\____/_/ /_/\____/_/  /____/  
+ / /  / / / / / /  __(__  )| |/ |/ /  __/  __/ /_/ /  __/ /     / __  / /_/ / / / / /_/ / /  (__  )
+/_/  /_/_/_/ /_/\___/____/ |__/|__/\___/\___/ .___/\___/_/     /_/ /_/\____/_/ /_/\____/_/  /____/
                                            /_/                                                      
     """
 BUTTONS_TEXT = """
@@ -700,10 +670,13 @@ def password_protect():
             logged_in_highscore = 0
             
             # save new dictionary to the file
-            with open("users.json", "w") as f:
-                f.write(json.dumps(users))
+            try:
+                with open("users.json", "w") as f:
+                    f.write(json.dumps(users))
+                break
+            except:
+                print("Failed to access the users file.")
             
-            break
         else:
             print("Invalid input")
             continue
@@ -757,7 +730,7 @@ if __name__ == '__main__':
         if game_over:
             clear_screen()
             display_board(True)
-            print("Whoops that was a mine. Game over, thx for playing")
+            print("Whoops that was a mine. Game over, thanks for playing!")
             break
 
         # Check if the user flagged all the mines and reveal the board
@@ -769,9 +742,9 @@ if __name__ == '__main__':
             end_time = time.perf_counter()
             elapsed = end_time - start_time
 
-            print(f"You won! Total moves: {moves}, total time: {elapsed:.0f} seconds")
-
             score = calculate_score(board_size, mine_count, elapsed)
+            print(f"You won! Total moves: {moves}, total time: {elapsed:.0f} seconds. Score: {score}")
+
             if score > logged_in_highscore:
                 print(f"NEW HIGH SCORE! {score}")
                 save_high_score(score)
