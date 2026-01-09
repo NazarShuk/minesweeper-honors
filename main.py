@@ -62,7 +62,7 @@ start_time = time.perf_counter()
 logged_in_user = None
 logged_in_highscore = None
 
-def input_with_exit(prompt):
+def input_with_exit(prompt = ""):
     """
     Custom input function that allows the user to quit at any time using Q
 
@@ -148,7 +148,7 @@ def generate_board():
 
         for column in range(board_size):
             # add a clear cell
-            current_column.append({
+            current_column.insert(-1, {
                 "has":"nothing",
                 "revealed": False,
                 "flagged": False
@@ -707,6 +707,10 @@ def password_protect():
             # make sure username and password is not empty
             if not username or not password: continue
 
+            if users.get(username) != None:
+                print("Account with that username already exists.")
+                continue
+
             # make sure password is alphanumerical (rubric)
             if not password.isalnum(): 
                 print("Password must only contain letters and numbers.")
@@ -719,6 +723,8 @@ def password_protect():
 
             if len(password) < 8:
                 print("Password must be atleast 8 characters long.")
+                continue
+            
 
             # make a new account in the dictionary
             users[username] = {
